@@ -2,9 +2,14 @@
 ARG BUN_VERSION=1.1.30
 FROM oven/bun:${BUN_VERSION}-slim as base
 
-LABEL fly_launch_runtime="Bun"
-
 WORKDIR /usr/src/app
+
+# Copy the rest of the files for python data processing
+COPY data.py .
+COPY requirements.txt .
+
+# Install dependencies for Python
+RUN pip install --no-cache-dir -r requirements.txt
 
 FROM base AS install
 RUN mkdir -p /temp/prod/server
