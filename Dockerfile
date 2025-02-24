@@ -1,22 +1,32 @@
-FROM node:20-alpine AS development-dependencies-env
-COPY . /app
-WORKDIR /app
-RUN npm ci
+# syntax=docker/dockerfile:1.7-labs
+ARG BUN_VERSION=1.1.30
+FROM oven/bun:${BUN_VERSION}-slim as base
 
-FROM node:20-alpine AS production-dependencies-env
-COPY ./package.json package-lock.json /app/
-WORKDIR /app
-RUN npm ci --omit=dev
+LABEL fly_launch_runtime="Bun"
 
-FROM node:20-alpine AS build-env
-COPY . /app/
-COPY --from=development-dependencies-env /app/node_modules /app/node_modules
-WORKDIR /app
-RUN npm run build
+WORKDIR /usr/src/app
 
-FROM node:20-alpine
-COPY ./package.json package-lock.json /app/
-COPY --from=production-dependencies-env /app/node_modules /app/node_modules
-COPY --from=build-env /app/build /app/build
-WORKDIR /app
-CMD ["npm", "run", "start"]
+FROM base AS install
+RUN mkdir -p /temp/prod/server
+COPY package.json bun.lockb /temp/prod/server/
+RUN cd /temp/prod/server && bun install --frozen-lockfile --production
+
+RUN mkdir -p /temp/prod/frontend
+COPY frontend/bun.lockb frontend/package.json /temp/prod/frontend/
+RUN cd /temp/prod/frontend && bun install --frozen-lockfile
+
+FROM base as build
+COPY . .
+COPY --from=install /temp/prod/server/node_modules node_modules
+COPY --from=install /temp/prod/frontend/node_modules frontend/node_modules
+ENV NODE_ENV=production
+RUN cd frontend && bun run build -d
+
+FROM base as release
+COPY --from=install /temp/prod/server/node_modules node_modules
+COPY --exclude=frontend --from=build /usr/src/app .
+COPY --from=build /usr/src/app/frontend/dist ./frontend/dist
+
+USER bun
+EXPOSE 3000/tcp
+ENTRYPOINT [ "bun", "run", "start" ]
