@@ -1,11 +1,12 @@
 # deps
 node_modules/
 
+# React Router btw this is in frontend/.react-router
+frontend/.react-router/
+frontend/build/
+
+# environment files
+*.env*
+
+# others
 .DS_Store
-/node_modules/
-
-# React Router
-/.react-router/
-/build/
-
-.*env
