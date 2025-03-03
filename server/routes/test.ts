@@ -18,15 +18,28 @@ testRouter.get('/python', async (c) => {
 		stderr: 'pipe',
 	})
 
-	const output = await new Response(pythonProcess.stdout as ReadableStream<Uint8Array>).text()
 	const errorOutput = await new Response(pythonProcess.stderr as ReadableStream<Uint8Array>).text()
-
 	if (errorOutput) {
 		console.error('Python Error:', errorOutput)
 		return new Response('Internal Server Error', { status: 500 })
 	}
 
-	return c.json({ message: output })
+	const outputText = await new Response(pythonProcess.stdout as ReadableStream<Uint8Array>).text()
+	try {
+		const value = outputText.replace(/'/g, '"')
+		console.log('Python Output:', value)
+
+		const outputs = outputText
+			.trim()
+			.split('\n')
+			.map((line) => JSON.parse(line))
+		console.log('Parsed Outputs:', outputs) // Log the parsed outputs
+
+		return c.json({ message: outputs })
+	} catch (error) {
+		console.error('Python Error:', error)
+		return new Response('Internal Server Error', { status: 500 })
+	}
 })
 
 testRouter.get('/stream/python', async (c) => {
