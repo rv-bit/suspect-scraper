@@ -1,6 +1,5 @@
 import pandas as pd
 import json
-import sys
 import time
 
 # def process_data():
@@ -28,11 +27,11 @@ import time
 #     process_data()
 
 # Simulate loading large datasets
-data1 = pd.DataFrame({'A': range(10), 'B': range(10, 20)})
-data2 = pd.DataFrame({'X': range(20, 30), 'Y': range(30, 40)})
+data1 = pd.DataFrame({"A": range(10), "B": range(10, 20)})
+data2 = pd.DataFrame({"X": range(20, 30), "Y": range(30, 40)})
 
-print(json.dumps(data1.to_dict(orient='records')), flush=True)
-print("===END===", flush=True)  # Separator between tables
-time.sleep(1)  # Simulate processing delay
-print(json.dumps(data2.to_dict(orient='records')), flush=True)
-print("===END===", flush=True)
+result1 = data1.to_dict(orient='records')
+result2 = data2.to_dict(orient='records')
+
+print(json.dumps(result1), flush=True)
+print(json.dumps(result2), flush=True)
