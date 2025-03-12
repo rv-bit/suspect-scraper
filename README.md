@@ -1,11 +1,19 @@
-To install dependencies:
-```sh
-bun install
-```
+# Suspect Scraper
 
-To run:
-```sh
-bun run dev
-```
+> **Uncover patterns, analyze data, and track criminal activity with a beautiful UI.**
 
-open http://localhost:3000
+SuspectScraper is a data analysis tool designed to collect, process, and visualize crime data. Powered by **Python** for data processing and **React** with **ShadCN UI** for the frontend, it leverages **Bun** as its runtime for fast performance and efficient dependency management.
+
+## Features
+- **Crime Data Aggregation:** Easily scrape and organize datasets from various sources.
+- **Python Process Management:** Spawn and manage Python processes seamlessly for data processing tasks.
+- **Modern UI:** Powered by **ShadCN UI** for clean and intuitive visuals.
+- **TypeScript Support:** Ensures safer code and improved development experience.
+- **Fast Runtime:** Built using **Bun** for improved speed and optimized performance.
+
+## Bun & Python Process Spawning
+The application leverages Bun's features to spawn proccesses and handle data-intensive tasks.
+
+## Environment Variables
+```
+```
