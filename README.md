@@ -14,6 +14,22 @@ SuspectScraper is a data analysis tool designed to collect, process, and visuali
 ## Bun & Python Process Spawning
 The application leverages Bun's features to spawn proccesses and handle data-intensive tasks.
 
+### Prerequisites
+
+- [Bun](https://bun.sh/)
+- Python 3.11+
+
+### Installation
+
+```bash
+bun install
+```
+
+### Running the Project
+```bash
+bun dev
+```
+
 ## Environment Variables
 ```
 ```
