@@ -4,7 +4,7 @@ import { logger } from 'hono/logger'
 import { serveStatic } from 'hono/bun'
 import { HTTPException } from 'hono/http-exception'
 
-import { ErrorResponse } from '~/shared/types'
+import { type ErrorResponse } from '~/shared/types'
 
 import testRouter from './routes/test'
 
