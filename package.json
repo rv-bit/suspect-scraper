@@ -2,12 +2,26 @@
 	"name": "my-app",
 	"scripts": {
 		"dev": "bun run --hot server/index.ts",
-		"start": "bun server/index.ts"
+		"start": "bun server/index.ts",
+		"db:generate": "tsc -p tsconfig.json && drizzle-kit generate --config=drizzle.config.ts",
+		"db:migrate": "drizzle-kit migrate --config=drizzle.config.ts",
+		"db:studio": "drizzle-kit studio --config=drizzle.config.ts",
+		"db:push": "drizzle-kit push --config=drizzle.config.ts"
 	},
 	"dependencies": {
-		"hono": "^4.7.2"
+		"@types/pg-copy-streams": "^1.2.5",
+		"dotenv": "^16.4.7",
+		"drizzle-orm": "^0.41.0",
+		"hono": "^4.7.2",
+		"pg": "^8.14.1",
+		"pg-copy-streams": "^6.0.6",
+		"pgml": "^1.1.1"
 	},
 	"devDependencies": {
-		"@types/bun": "latest"
+		"@types/bun": "latest",
+		"@types/pg": "^8.11.11",
+		"drizzle-kit": "^0.30.6",
+		"tsx": "^4.19.3",
+		"typescript": "^5.8.2"
 	}
 }
