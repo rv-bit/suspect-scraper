@@ -13,7 +13,7 @@ SuspectScraper is a data analysis tool designed to collect, process, and visuali
 
 ## Stack
 - **Hono**
-- **Drizzle ORM (SQL)**
+- **Drizzle ORM (Postgress)**
 - **React**
 - **Tailwind**
 
