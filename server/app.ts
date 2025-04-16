@@ -27,7 +27,7 @@ app.use('*', async (c, next) => {
 })
 
 app.use(logger())
-app.route('/test', testRouter)
+app.route('/v0', testRouter)
 
 app.onError((err, c) => {
 	if (err instanceof HTTPException) {
