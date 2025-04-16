@@ -2,10 +2,18 @@ import stylesheet from './app.css?url'
 
 import type { Route } from './+types/root'
 
-import { isRouteErrorResponse, Links, Meta, Outlet, Scripts, ScrollRestoration } from 'react-router'
+import { isRouteErrorResponse, Links, Meta, Outlet, Scripts, ScrollRestoration, useNavigation } from 'react-router'
+
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+
+import type { LoadingBarRef } from 'react-top-loading-bar'
+import LoadingBar from 'react-top-loading-bar'
+
 import { ThemeProvider } from './providers/Theme'
+import React from 'react'
 
 const THEME_COOKIE_NAME = 'theme:state'
+const queryClient = new QueryClient()
 
 export const links: Route.LinksFunction = () => [
 	{ rel: 'preconnect', href: 'https://fonts.googleapis.com' },
@@ -59,10 +67,29 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
+	const navigation = useNavigation()
+	const loadingBarRef = React.useRef<LoadingBarRef>(null)
+
+	React.useEffect(() => {
+		if (navigation.state === 'loading' || navigation.state === 'submitting') {
+			loadingBarRef.current?.continuousStart()
+		}
+
+		if (navigation.state === 'idle') {
+			loadingBarRef.current?.complete()
+		}
+	}, [navigation.state])
+
 	return (
-		<ThemeProvider>
-			<Outlet />
-		</ThemeProvider>
+		<React.Fragment>
+			<LoadingBar ref={loadingBarRef} color='#5060dd' shadow={false} transitionTime={100} waitingTime={300} />
+
+			<QueryClientProvider client={queryClient}>
+				<ThemeProvider>
+					<Outlet />
+				</ThemeProvider>
+			</QueryClientProvider>
+		</React.Fragment>
 	)
 }
 
