@@ -6,7 +6,6 @@ SuspectScraper is a data analysis tool designed to collect, process, and visuali
 
 ## Features
 - **Crime Data Aggregation:** Easily organize datasets from disorganised public data.
-- **Python Process Management:** Spawn and manage Python processes seamlessly for data processing tasks.
 - **Modern UI:** Powered by **ShadCN UI** for clean and intuitive visuals.
 - **TypeScript Support:** Ensures safer code and improved development experience.
 - **Fast Runtime:** Built using **Bun** for improved speed and optimized performance.
@@ -16,9 +15,6 @@ SuspectScraper is a data analysis tool designed to collect, process, and visuali
 - **Drizzle ORM (Postgress)**
 - **React**
 - **Tailwind**
-
-## Bun & Python Process Spawning
-The application leverages Bun's features to spawn proccesses and handle data-intensive tasks.
 
 ### Prerequisites
 
