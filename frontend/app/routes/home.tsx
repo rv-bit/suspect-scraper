@@ -1,7 +1,8 @@
-import { useLoaderData } from 'react-router'
 import type { Route } from './+types/home'
+import { useLoaderData } from 'react-router'
 
 import axiosInstance from '~/lib/axios-instance'
+
 import { Welcome } from '~/welcome/welcome'
 
 export function meta({}: Route.MetaArgs) {
@@ -13,13 +14,10 @@ type LoaderData = {
 }
 
 export async function clientLoader({ params }: Route.ClientLoaderArgs) {
-	const res = await axiosInstance.get(`/api/test`)
-	const res2 = await axiosInstance.get(`/api/test/python`)
+	const res = await axiosInstance.get(`/api/v0/`)
 	const data = await res.data
-	const data2 = await res2.data
 	return {
 		...data,
-		...data2,
 	}
 }
 
