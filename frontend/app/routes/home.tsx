@@ -3,8 +3,6 @@ import { useLoaderData } from 'react-router'
 
 import axiosInstance from '~/lib/axios-instance'
 
-import { Welcome } from '~/welcome/welcome'
-
 export function meta({}: Route.MetaArgs) {
 	return [{ title: 'New React Router App' }, { name: 'description', content: 'Welcome to React Router!' }]
 }
@@ -30,5 +28,9 @@ export default function Home() {
 
 	console.log(data.message)
 
-	return <Welcome />
+	return (
+		<div className='flex justify-center items-center'>
+			<h1>HI</h1>
+		</div>
+	)
 }
