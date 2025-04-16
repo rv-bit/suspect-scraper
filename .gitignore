@@ -11,5 +11,4 @@ frontend/build/
 # others
 .DS_Store
 
-# csv files
-*.csv
+.venv
