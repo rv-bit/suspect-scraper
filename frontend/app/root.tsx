@@ -3,17 +3,18 @@ import stylesheet from './app.css?url'
 import type { Route } from './+types/root'
 
 import { isRouteErrorResponse, Links, Meta, Outlet, Scripts, ScrollRestoration, useNavigation } from 'react-router'
+import React from 'react'
 
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { QueryClientProvider } from '@tanstack/react-query'
 
 import type { LoadingBarRef } from 'react-top-loading-bar'
 import LoadingBar from 'react-top-loading-bar'
 
+import queryClient from '~/lib/query-instance'
+
 import { ThemeProvider } from './providers/Theme'
-import React from 'react'
 
 const THEME_COOKIE_NAME = 'theme:state'
-const queryClient = new QueryClient()
 
 export const links: Route.LinksFunction = () => [
 	{ rel: 'preconnect', href: 'https://fonts.googleapis.com' },
@@ -57,7 +58,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 				<Meta />
 				<Links />
 			</head>
-			<body>
+			<body className='overflow-x-hidden'>
 				{children}
 				<ScrollRestoration />
 				<Scripts />
