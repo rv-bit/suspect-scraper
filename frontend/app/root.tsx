@@ -1,8 +1,11 @@
-import './app.css'
+import stylesheet from './app.css?url'
 
 import type { Route } from './+types/root'
 
 import { isRouteErrorResponse, Links, Meta, Outlet, Scripts, ScrollRestoration } from 'react-router'
+import { ThemeProvider } from './providers/Theme'
+
+const THEME_COOKIE_NAME = 'theme:state'
 
 export const links: Route.LinksFunction = () => [
 	{ rel: 'preconnect', href: 'https://fonts.googleapis.com' },
@@ -15,6 +18,11 @@ export const links: Route.LinksFunction = () => [
 		rel: 'stylesheet',
 		href: 'https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap',
 	},
+	{
+		rel: 'stylesheet',
+		href: 'https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&family=Courgette&family=Tajawal:wght@200;300;400;500;700;800;900&display=swap',
+	},
+	{ rel: 'stylesheet', href: stylesheet },
 ]
 
 export function Layout({ children }: { children: React.ReactNode }) {
@@ -23,6 +31,21 @@ export function Layout({ children }: { children: React.ReactNode }) {
 			<head>
 				<meta charSet='utf-8' />
 				<meta name='viewport' content='width=device-width, initial-scale=1' />
+
+				{/* To avoid FOUC aka Flash of Unstyled Content */}
+				<script
+					dangerouslySetInnerHTML={{
+						__html: `
+							try {
+								const cookieMatch = document.cookie.match(new RegExp("(^| )${THEME_COOKIE_NAME}=([^;]+)"))
+								const cachedTheme = cookieMatch ? (cookieMatch[2]) : 'light'
+
+								document.documentElement.classList.toggle('dark', cachedTheme === 'dark' || (!(document.cookie.match(new RegExp("(^| )${THEME_COOKIE_NAME}=([^;]+)"))) && window.matchMedia('(prefers-color-scheme: dark)').matches))
+							} catch (_) {}
+						`,
+					}}
+				/>
+
 				<Meta />
 				<Links />
 			</head>
@@ -36,7 +59,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
-	return <Outlet />
+	return (
+		<ThemeProvider>
+			<Outlet />
+		</ThemeProvider>
+	)
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
