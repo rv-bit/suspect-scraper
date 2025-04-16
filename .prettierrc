@@ -1,0 +1,9 @@
+{
+	"plugins": ["prettier-plugin-organize-imports", "prettier-plugin-tailwindcss"],
+	"tailwindStylesheet": "./app/app.css",
+	"tailwindFunctions": ["clsx", "cva"],
+	"tabWidth": 4,
+	"useTabs": true,
+	"printWidth": 200,
+    "proseWrap": "never"
+}
