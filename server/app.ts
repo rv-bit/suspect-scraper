@@ -6,7 +6,7 @@ import { HTTPException } from 'hono/http-exception'
 
 import { type ErrorResponse } from '~/shared/types'
 
-import testRouter from './routes/test'
+import areaRouter from './routes/area'
 
 const app = new Hono().basePath('/api')
 
@@ -27,7 +27,7 @@ app.use('*', async (c, next) => {
 })
 
 app.use(logger())
-app.route('/v0/', testRouter)
+app.route('/v0/', areaRouter)
 
 app.onError((err, c) => {
 	if (err instanceof HTTPException) {
