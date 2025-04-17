@@ -4,29 +4,16 @@ import { useLoaderData, useNavigate } from 'react-router'
 import { Button } from '~/components/ui/button'
 
 import axiosInstance from '~/lib/axios-instance'
-import queryClient from '~/lib/query-instance'
 
 export function meta({}: Route.MetaArgs) {
 	return [{ title: 'New React Router App' }, { name: 'description', content: 'Welcome to React Router!' }]
 }
 
-interface LoaderData {
-	areas: string[]
-}
-
 export async function clientLoader({ params }: Route.ClientLoaderArgs) {
-	let cachedData = queryClient.getQueryData(['areas'])
+	const res = await axiosInstance.get(`/api/v0/locations`)
+	const data = res.data.data
 
-	if (!cachedData) {
-		const res = await axiosInstance.get(`/api/v0/`)
-		const data = await res.data
-
-		queryClient.setQueryData(['areas'], data)
-
-		cachedData = queryClient.getQueryData(['areas'])
-	}
-
-	return cachedData as LoaderData
+	return data as string[]
 }
 
 export function HydrateFallback() {
@@ -35,7 +22,7 @@ export function HydrateFallback() {
 
 export default function Home() {
 	const navigate = useNavigate();
-	const data = useLoaderData<LoaderData>()
+	const data = useLoaderData<string[]>()
 
 	return (
 		<div className='flex items-start flex-col justify-start h-svh w-full mx-auto'>
@@ -45,7 +32,7 @@ export default function Home() {
 
 			<main className='flex justify-center items-center gap-2 mx-2 mt-5 w-full pb-5'>
 				<ul className='grid sm:grid-cols-4 md:grid-cols-3 justify-center gap-2 w-full sm:w-auto'>
-					{data.areas.map((area: string, index) => (
+					{data.map((area: string, index) => (
 						<Button 
 							key={index} 
 							className='text-lg font-semibold min-h-20 h-auto wrap-anywhere w-full whitespace-normal'
