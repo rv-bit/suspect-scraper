@@ -2,7 +2,7 @@ import stylesheet from './app.css?url'
 
 import type { Route } from './+types/root'
 
-import { isRouteErrorResponse, Links, Meta, Outlet, Scripts, ScrollRestoration, useNavigation } from 'react-router'
+import { isRouteErrorResponse, Links, Meta, Outlet, Scripts, ScrollRestoration, useLoaderData, useNavigation, type LoaderFunctionArgs } from 'react-router'
 import React from 'react'
 
 import { QueryClientProvider } from '@tanstack/react-query'
@@ -13,6 +13,7 @@ import LoadingBar from 'react-top-loading-bar'
 import queryClient from '~/lib/query-instance'
 
 import { ThemeProvider } from './providers/Theme'
+import { parse } from 'cookie'
 
 const THEME_COOKIE_NAME = 'theme:state'
 
@@ -34,7 +35,19 @@ export const links: Route.LinksFunction = () => [
 	{ rel: 'stylesheet', href: stylesheet },
 ]
 
+export function loader({ request }: LoaderFunctionArgs) {
+	const cookie = parse(request.headers.get("cookie") ?? "");
+	const cachedTheme = cookie[THEME_COOKIE_NAME] ?? null;
+
+	return {
+		theme: cachedTheme,
+	};
+}
+
 export function Layout({ children }: { children: React.ReactNode }) {
+	const { theme: cookieTheme } = useLoaderData<typeof loader>();
+	const theme = cookieTheme ?? (typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+
 	return (
 		<html lang='en'>
 			<head>
@@ -45,12 +58,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
 				<script
 					dangerouslySetInnerHTML={{
 						__html: `
-							try {
+							(function() {
 								const cookieMatch = document.cookie.match(new RegExp("(^| )${THEME_COOKIE_NAME}=([^;]+)"))
 								const cachedTheme = cookieMatch ? (cookieMatch[2]) : 'light'
 
 								document.documentElement.classList.toggle('dark', cachedTheme === 'dark' || (!(document.cookie.match(new RegExp("(^| )${THEME_COOKIE_NAME}=([^;]+)"))) && window.matchMedia('(prefers-color-scheme: dark)').matches))
-							} catch (_) {}
+							})();
 						`,
 					}}
 				/>
