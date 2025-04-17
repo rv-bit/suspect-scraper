@@ -11,7 +11,7 @@ export default [
     
     ...prefix('area', [
         layout('./routes/area/$location/_layout.tsx', [
-            route(':location', './routes/area/$location/index.tsx'), 
+            route(':id', './routes/area/$location/index.tsx'), 
         ])
     ]
 )] satisfies RouteConfig
