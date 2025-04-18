@@ -84,7 +84,7 @@ export default function Layout() {
                                 <h1 className="break-all text-3xl font-bold text-center sm:text-left">{titleCase(params ? params.id.replace(/-/g, " ") : "")}</h1>
 
                                 <Button
-                                    className="text-lg font-semibold min-h-10 h-auto wrap-anywhere w-auto rounded-sm whitespace-normal justify-start"
+                                    className="text-sm font-medium min-h-10 h-auto wrap-anywhere w-auto rounded-sm whitespace-normal justify-start"
                                     onClick={() => {
                                         window.open(`https://www.police.uk/pu/your-area/${params ? policeForceName : ""}/`, "_blank");
                                     }}
