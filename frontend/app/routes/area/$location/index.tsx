@@ -270,7 +270,7 @@ export default function Index({
                         <div className="flex flex-1 flex-col justify-center gap-0 px-6 py-5 sm:py-6">
                             <CardTitle className="text-2xl">Amount of Reported Crimes</CardTitle>
                             <CardDescription>
-                                Showing total visitors for the last {timeRange} months
+                                Showing total crimes reported in the {timeRange} year
                             </CardDescription>
                         </div>
 
