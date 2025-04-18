@@ -12,11 +12,6 @@ import LoadingBar from 'react-top-loading-bar'
 
 import queryClient from '~/lib/query-instance'
 
-import { ThemeProvider } from './providers/Theme'
-import { parse } from 'cookie'
-
-const THEME_COOKIE_NAME = 'theme:state'
-
 export const links: Route.LinksFunction = () => [
 	{ rel: 'preconnect', href: 'https://fonts.googleapis.com' },
 	{
@@ -35,52 +30,7 @@ export const links: Route.LinksFunction = () => [
 	{ rel: 'stylesheet', href: stylesheet },
 ]
 
-export function loader({ request }: LoaderFunctionArgs) {
-	const cookie = parse(request.headers.get("cookie") ?? "");
-	const cachedTheme = cookie[THEME_COOKIE_NAME] ?? null;
-
-	return {
-		theme: cachedTheme,
-	};
-}
-
 export function Layout({ children }: { children: React.ReactNode }) {
-	const { theme: cookieTheme } = useLoaderData<typeof loader>();
-	const theme = cookieTheme ?? (typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
-
-	return (
-		<html lang='en'>
-			<head>
-				<meta charSet='utf-8' />
-				<meta name='viewport' content='width=device-width, initial-scale=1' />
-
-				{/* To avoid FOUC aka Flash of Unstyled Content */}
-				<script
-					dangerouslySetInnerHTML={{
-						__html: `
-							(function() {
-								const cookieMatch = document.cookie.match(new RegExp("(^| )${THEME_COOKIE_NAME}=([^;]+)"))
-								const cachedTheme = cookieMatch ? (cookieMatch[2]) : 'light'
-
-								document.documentElement.classList.toggle('dark', cachedTheme === 'dark' || (!(document.cookie.match(new RegExp("(^| )${THEME_COOKIE_NAME}=([^;]+)"))) && window.matchMedia('(prefers-color-scheme: dark)').matches))
-							})();
-						`,
-					}}
-				/>
-
-				<Meta />
-				<Links />
-			</head>
-			<body className='overflow-x-hidden'>
-				{children}
-				<ScrollRestoration />
-				<Scripts />
-			</body>
-		</html>
-	)
-}
-
-export default function App() {
 	const navigation = useNavigation()
 	const loadingBarRef = React.useRef<LoadingBarRef>(null)
 
@@ -95,16 +45,29 @@ export default function App() {
 	}, [navigation.state])
 
 	return (
-		<React.Fragment>
-			<LoadingBar ref={loadingBarRef} color='#5060dd' shadow={false} transitionTime={100} waitingTime={300} />
+		<html lang='en'>
+			<head>
+				<meta charSet='utf-8' />
+				<meta name='viewport' content='width=device-width, initial-scale=1' />
 
-			<QueryClientProvider client={queryClient}>
-				<ThemeProvider>
-					<Outlet />
-				</ThemeProvider>
-			</QueryClientProvider>
-		</React.Fragment>
+				<Meta />
+				<Links />
+			</head>
+			<body className='overflow-x-hidden'>
+				<LoadingBar ref={loadingBarRef} color='#5060dd' shadow={false} transitionTime={100} waitingTime={300} />
+
+				<QueryClientProvider client={queryClient}>
+					{children}
+				</QueryClientProvider>
+				<ScrollRestoration />
+				<Scripts />
+			</body>
+		</html>
 	)
+}
+
+export default function App() {
+	return <Outlet />
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
