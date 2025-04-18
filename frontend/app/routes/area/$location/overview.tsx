@@ -1,4 +1,4 @@
-import type { Route } from "./+types/index";
+import type { Route } from "./+types/overview";
 
 import queryClient from "~/lib/query-instance";
 import axiosInstance from "~/lib/axios-instance";
