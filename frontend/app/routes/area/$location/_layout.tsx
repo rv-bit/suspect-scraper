@@ -3,66 +3,124 @@ import type { Route } from "./+types/_layout";
 import React from 'react'
 import { Outlet, useLoaderData, useNavigate, useParams, useSearchParams } from 'react-router'
 
+import queryClient from "~/lib/query-instance";
+import axiosInstance from "~/lib/axios-instance";
+
 import { cn, titleCase } from "~/lib/utils";
 
 import { ChartNoAxesCombined, Hand, House, Map as MapIcon, TrendingUpDown, type LucideIcon } from "lucide-react";
 import { Button } from "~/components/ui/button";
 
-interface Actions {
-	title: string;
-	tab: string;
-	icon?: LucideIcon;
-	disabled?: boolean;
+type LoaderAreaData = {
+    dates: string[]
+    area: string
 }
 
-const actions: Actions[] = [
-	{
-		title: "Overview",
-		tab: "overview",
-        icon: House,
-	},
-	{
-		title: "Crimes",
-		tab: "crimes",
-        icon: MapIcon,
-	},
-	{
-		title: "Stop and Search",
-		tab: "stop-and-search",
-        icon: Hand,
-        disabled: true,
-	},
-	{
-		title: "Statistics",
-		tab: "statistics",
-        icon: ChartNoAxesCombined,
-	},
-	{
-		title: "Predictions",
-		tab: "predictions",
-        icon: TrendingUpDown,
-        disabled: true,
-	},
-];
+const prefetchArea = async (id: string) => {
+    await queryClient.prefetchQuery({
+        queryKey: [`area-shared-data`],
+        queryFn: async () => {
+            const result = await axiosInstance.get(`/api/v0/${id}/shared`);
 
-export async function clientLoader({ params, request }: Route.ClientLoaderArgs) {
+            if (result.status !== 200) {
+                throw new Error("Failed to fetch data");
+            }
+
+            return {
+                dates: result.data.dates,
+                area: id,
+            };
+        },
+        staleTime: 10 * 1000, // 30 seconds
+    });
+}
+
+export async function loader({ params }: Route.LoaderArgs) {
+    if (!params.id) {
+        throw new Response("", { status: 404, headers: { Location: "/" } }); // Redirect to home if no area is provided
+    }
+
+    let cachedData = queryClient.getQueryData([`area-shared-data`]) as LoaderAreaData;
+
+    if (!cachedData) {
+        await prefetchArea(params.id);
+    } else {
+        if (cachedData.area !== params.id) {
+            await queryClient.invalidateQueries({
+                queryKey: [`area-shared-data`],
+            });
+    
+            await prefetchArea(params.id);
+        }
+    }
+
+    cachedData = queryClient.getQueryData([`area-shared-data`]) as LoaderAreaData;
+
+    return {
+        dates: cachedData.dates || [],
+        area: params.id,
+    }
+}
+
+export async function clientLoader({ serverLoader, params, request }: Route.ClientLoaderArgs) {
+	const serverData = await serverLoader();
+
 	return {
-        params,
-        request,
+        ...serverData,
+        params: params,
+        request: request,
     }
 }
 
 export default function Layout() {
     const navigate = useNavigate();
-    const { params, request } = useLoaderData() as {
+    const { dates, params, request } = useLoaderData() as {
+        dates: string[];
         params: { id: string };
         request: Request;
     }
-    const policeForceName = params.id.replace(/\b(and|or)\b/g, '').replace(/-/g, ' ').replace(/\s+/g, ' ').replace(/ /g, '-').toLowerCase();
-    
+
+    const policeForceName = params.id.replace(/\b(and|or)\b/g, '').replace(/-/g, ' ').replace(/\s+/g, ' ').replace(/ /g, '-').toLowerCase();    
+
+    const actions = React.useMemo(() => [
+        {
+            title: "Overview",
+            tab: "overview",
+            icon: House,
+        },
+        {
+            title: "Crimes",
+            tab: "crimes",
+            params: dates.sort().reverse()[0], // latest date
+            icon: MapIcon,
+        },
+        {
+            title: "Stop and Search",
+            tab: "stop-and-search",
+            icon: Hand,
+            disabled: true,
+        },
+        {
+            title: "Statistics",
+            tab: "statistics",
+            icon: ChartNoAxesCombined,
+        },
+        {
+            title: "Predictions",
+            tab: "predictions",
+            icon: TrendingUpDown,
+            disabled: true,
+        },
+    ] as {
+        title: string;
+        tab: string;
+        params?: string;
+        icon?: LucideIcon;
+        disabled?: boolean;
+    }[], [dates]);
+
     const url = new URL(request.url);
     const path = url.pathname;
-
     const isActive = React.useMemo(
         () => (url: string) => {
             if (Array.isArray(url)) {
@@ -105,7 +163,7 @@ export default function Layout() {
                                 disabled={action.disabled}
                                 onClick={(e) => {
                                     e.preventDefault();
-                                    navigate(`/area/${params.id}/${action.tab}`);
+                                    navigate(`/area/${params.id}/${action.tab}${action.params ? `?year=${action.params}` : ""}`);
                                 }}
                                 className={cn(
                                     "group relative h-auto w-auto min-w-40 shrink-0 items-center justify-center rounded-none p-9 pt-7 pb-3 hover:no-underline flex flex-col gap-0 [&_svg:not([class*='size-'])]:size-5 hover:bg-gray-100 transition-all duration-75 ease-in-out",
