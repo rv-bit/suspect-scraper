@@ -61,13 +61,13 @@ areaRouter.get('/locations', async (c) => {
 areaRouter.get('/:id', async (c) => {
 	const area = c.req.param('id').replace(/-/g, ' ');
 
-	const months = ["2024-12", "2024-11", "2024-10", "2024-09", "2024-08", "2024-07", "2024-06", "2024-05", "2024-04", "2024-03", "2024-02", "2024-01",];
+	const months = ["2024-12", "2024-11", "2024-10", "2024-09", "2024-08", "2024-07", "2024-06", "2024-05", "2024-04", "2024-03", "2024-02", "2024-01"];
 	const crimeDataByMonth = await Promise.all(months.map((month) => getCrimeDataForMonth(month, area)));
 	const crimeTotalsByMonth = months.reduce((acc, month, index) => {
-        acc[month] = crimeDataByMonth[index]?.totalCrimes || 0; // Ensure no undefined values
+		acc[month] = crimeDataByMonth[index]?.totalCrimes || 0; // Ensure no undefined values
         return acc;
     }, {} as { [key: string]: number });
-	
+
 	const [decData, novData] = crimeDataByMonth;
 
 	const overallCountNov = novData.topCrimeTypes.reduce((total, crime) => total + crime.count, 0);
@@ -78,8 +78,23 @@ areaRouter.get('/:id', async (c) => {
 
 	const increase = ((percentageDec - percentageNov) / percentageNov) * 100;
 
-	return c.json({ lastMonthTopCrimes: decData.topCrimeTypes, lastYearTotalsByMonth: crimeTotalsByMonth, topIncreaseFromPrevMonth: increase });
+	return c.json({
+		lastMonthTopCrimes: decData.topCrimeTypes, 
+		lastYearTotalsByMonth: crimeTotalsByMonth, 
+		topIncreaseFromPrevMonth: increase 
+	});
 })
+
+areaRouter.get('/:id/shared', async (c) => {
+	const area = c.req.param('id').replace(/-/g, ' ');
+
+	const dates = await db.selectDistinct({ month: mySchemaCrimeData.month }).from(mySchemaCrimeData).where(like(lower(mySchemaCrimeData.fallsWithin), `%${area}%`),).orderBy(mySchemaCrimeData.month);
+	const sortedDates = dates.map((date) => date.month);
+
+	return c.json({
+		dates: sortedDates
+	});
+});
 
 areaRouter.get('/:id/getDataByMonth/:year', async (c) => {
 	const area = c.req.param('id').replace(/-/g, ' ');
@@ -97,6 +112,40 @@ areaRouter.get('/:id/getDataByMonth/:year', async (c) => {
     }, {} as { [key: string]: number });
 
 	return c.json({ data: crimeTotalsByMonth });
+})
+
+areaRouter.get('/:id/getCrimeDataByMonth/:year', async (c) => {
+	const area = c.req.param('id').replace(/-/g, ' ');
+	const year = c.req.param('year');
+
+	if (!year) {
+		return c.json({ error: 'Year is required' }, 400)
+	}
+
+	const crimes = await db
+		.selectDistinct()
+		.from(mySchemaCrimeData)
+		.where(
+			and(
+				like(lower(mySchemaCrimeData.fallsWithin), `%${area}%`),
+				like(mySchemaCrimeData.month, `%${year}%`)
+			)
+		)
+		.orderBy(mySchemaCrimeData.fallsWithin);
+
+	const crimeTypes = crimes.map((crime) => crime.crimeType) as string[]; // we got soo much data that we know that this is a string
+	const crimeTypesCount = crimeTypes.reduce((acc, crimeType: string) => {
+		acc[crimeType] = (acc[crimeType] || 0) + 1;
+		return acc;
+	}, {} as { [key: string]: number });
+
+	const totalCrimes = Object.values(crimeTypesCount).reduce((total, count) => total + count, 0);
+	const sortedCrimeTypes = Object.entries(crimeTypesCount).sort((a, b) => b[1] - a[1]).map(([crimeType, count]) => ({
+		crimeType,
+		count,
+	}));
+
+	return c.json({ data: sortedCrimeTypes, total: totalCrimes });
 })
 
 export default areaRouter
