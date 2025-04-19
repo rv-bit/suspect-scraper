@@ -1,10 +1,11 @@
 import type { Route } from "./+types/overview";
+import React from "react";
 
 import queryClient from "~/lib/query-instance";
 import axiosInstance from "~/lib/axios-instance";
 
 import { TrendingUp } from "lucide-react"
-import { Area, AreaChart, Bar, BarChart, CartesianGrid, LabelList, XAxis, YAxis } from "recharts"
+import { Bar, BarChart, CartesianGrid, LabelList, XAxis, YAxis } from "recharts"
 
 import {
     Card,
@@ -18,12 +19,10 @@ import {
 import {
     type ChartConfig,
     ChartContainer,
-    ChartLegend,
-    ChartLegendContent,
     ChartTooltip,
     ChartTooltipContent,
 } from "~/components/ui/chart"
-import React from "react";
+
 import { Button } from "~/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
 
@@ -49,8 +48,6 @@ const prefetchArea = async (id: string) => {
                 throw new Error("Failed to fetch data");
             }
 
-            console.log('result', result);
-
             return {
                 lastMonthTopCrimes: result.data.lastMonthTopCrimes,
                 topIncreaseFromPrev: result.data.topIncreaseFromPrevMonth,
@@ -68,8 +65,6 @@ export async function loader({ params }: Route.LoaderArgs) {
     }
 
     let cachedData = queryClient.getQueryData([`area-overview`]) as LoaderAreaData;
-
-    console.log('cachedData', cachedData ? cachedData.area : '', params.id);
 
     if (!cachedData) {
         await prefetchArea(params.id);
@@ -104,7 +99,6 @@ export async function clientLoader({ serverLoader, params }: Route.ClientLoaderA
 export function HydrateFallback() {
 	return <div>Loading...</div>
 }
-
 
 export default function Index({
     loaderData,
@@ -164,8 +158,6 @@ export default function Index({
 
     const handleChangeTimeRange = (value: string) => {
         setTimeRange(value);
-
-        console.log('value', value);
 
         const cachedData = queryClient.getQueryData([`latestCrimesChartData`, area, value]) as {
             [month: string]: number;
