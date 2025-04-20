@@ -2,7 +2,7 @@ import { Hono } from 'hono'
 import { and, like } from 'drizzle-orm'
 
 import { db } from '~/server/database/index'
-import { mySchemaCrimeData } from '~/server/database/schema'
+import { mySchemaCrimeData } from '~/server/database/schema/schema'
 
 import { lower } from '../database/utils'
 
@@ -88,7 +88,7 @@ areaRouter.get('/:id', async (c) => {
 areaRouter.get('/:id/shared', async (c) => {
 	const area = c.req.param('id').replace(/-/g, ' ');
 
-	const dates = await db.selectDistinct({ month: mySchemaCrimeData.month }).from(mySchemaCrimeData).where(like(lower(mySchemaCrimeData.fallsWithin), `%${area}%`),).orderBy(mySchemaCrimeData.month);
+	const dates = await db.selectDistinct({ month: mySchemaCrimeData.month }).from(mySchemaCrimeData).where(like(lower(mySchemaCrimeData.fallsWithin), `%${area}%`)).orderBy(mySchemaCrimeData.month);
 	const sortedDates = dates.map((date) => date.month);
 
 	return c.json({
@@ -147,5 +147,40 @@ areaRouter.get('/:id/getCrimeDataByMonth/:year', async (c) => {
 
 	return c.json({ data: sortedCrimeTypes, total: totalCrimes });
 })
+
+areaRouter.get('/:id/getCrimeDataByCrime/:year/:crimeType', async (c) => {
+	const area = c.req.param('id').replace(/-/g, ' ');
+	const year = c.req.param('year');
+	const crimeType = c.req.param('crimeType');
+
+	if (!year) {
+		return c.json({ error: 'Year is required' }, 400)
+	}
+
+	const crimes = await db
+		.selectDistinct()
+		.from(mySchemaCrimeData)
+		.where(
+			and(
+				like(lower(mySchemaCrimeData.fallsWithin), `%${area}%`),
+				like(mySchemaCrimeData.month, `%${year}%`),
+				like(mySchemaCrimeData.crimeType, `%${crimeType}%`)
+			)
+		)
+		.orderBy(mySchemaCrimeData.fallsWithin);
+	
+	const locations = crimes.map((crime) => ({
+		key: `${crime.crimeID}-${crime.crimeType}-${crime.month}-${crime.fallsWithin}-${crime.latitude}-${crime.longitude}`,
+		locationNear: crime.location,
+		location: {
+			lat: parseFloat(crime.latitude as string),
+			lng: parseFloat(crime.longitude as string),
+		},
+	}));
+
+	console.log('locations', locations);
+
+	return c.json({ data: locations });
+});
 
 export default areaRouter

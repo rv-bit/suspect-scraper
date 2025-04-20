@@ -11,6 +11,7 @@ import type { LoadingBarRef } from 'react-top-loading-bar'
 import LoadingBar from 'react-top-loading-bar'
 
 import queryClient from '~/lib/query-instance'
+import { APIProvider } from '@vis.gl/react-google-maps'
 
 export const links: Route.LinksFunction = () => [
 	{ rel: 'preconnect', href: 'https://fonts.googleapis.com' },
@@ -56,9 +57,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
 			<body className='overflow-x-hidden'>
 				<LoadingBar ref={loadingBarRef} color='#5060dd' shadow={false} transitionTime={100} waitingTime={300} />
 
-				<QueryClientProvider client={queryClient}>
-					{children}
-				</QueryClientProvider>
+					<QueryClientProvider client={queryClient}>
+						<APIProvider apiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY}>
+							{children}
+						</APIProvider>
+					</QueryClientProvider>
 				<ScrollRestoration />
 				<Scripts />
 			</body>
