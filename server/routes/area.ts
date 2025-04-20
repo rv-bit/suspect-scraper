@@ -1,5 +1,5 @@
 import { Hono } from 'hono'
-import { and, like } from 'drizzle-orm'
+import { and, eq, like, notLike } from 'drizzle-orm'
 
 import { db } from '~/server/database/index'
 import { mySchemaCrimeData } from '~/server/database/schema/schema'
@@ -127,13 +127,19 @@ areaRouter.get('/:id/getCrimeDataByMonth/:year', async (c) => {
 		.from(mySchemaCrimeData)
 		.where(
 			and(
+				notLike(lower(mySchemaCrimeData.crimeID), `%unknown%`),
 				like(lower(mySchemaCrimeData.fallsWithin), `%${area}%`),
-				like(mySchemaCrimeData.month, `%${year}%`)
+				eq(mySchemaCrimeData.month, year)
 			)
 		)
 		.orderBy(mySchemaCrimeData.fallsWithin);
 
-	const crimeTypes = crimes.map((crime) => crime.crimeType) as string[]; // we got soo much data that we know that this is a string
+	const crimeTypes = crimes.filter((crime) => {
+		const latitude = parseFloat(crime.latitude as string);
+		const longitude = parseFloat(crime.longitude as string);
+		return !isNaN(latitude) && !isNaN(longitude);
+	}).map((crime) => crime.crimeType) as string[]; // we got soo much data that we know that this is a string
+
 	const crimeTypesCount = crimeTypes.reduce((acc, crimeType: string) => {
 		acc[crimeType] = (acc[crimeType] || 0) + 1;
 		return acc;
@@ -157,28 +163,29 @@ areaRouter.get('/:id/getCrimeDataByCrime/:year/:crimeType', async (c) => {
 		return c.json({ error: 'Year is required' }, 400)
 	}
 
+	const conditions = [
+		notLike(lower(mySchemaCrimeData.crimeID), `%unknown%`),
+		like(lower(mySchemaCrimeData.fallsWithin), `%${area}%`),
+		like(mySchemaCrimeData.month, `%${year}%`),
+		crimeType !== 'all' 
+			? like(mySchemaCrimeData.crimeType, `%${crimeType}%`) 
+			: undefined // omit the condition entirely if not needed
+	].filter(Boolean); // removes undefined
+
 	const crimes = await db
 		.selectDistinct()
 		.from(mySchemaCrimeData)
-		.where(
-			and(
-				like(lower(mySchemaCrimeData.fallsWithin), `%${area}%`),
-				like(mySchemaCrimeData.month, `%${year}%`),
-				like(mySchemaCrimeData.crimeType, `%${crimeType}%`)
-			)
-		)
+		.where(and(...conditions))
 		.orderBy(mySchemaCrimeData.fallsWithin);
 	
 	const locations = crimes.map((crime) => ({
-		key: `${crime.crimeID}-${crime.crimeType}-${crime.month}-${crime.fallsWithin}-${crime.latitude}-${crime.longitude}`,
+		key: `${crime.crimeID}-${crime.crimeType}-${crime.month}-${crime.fallsWithin}-${crime.latitude}-${crime.longitude}-${crime.location}-${crime.lsoaCode}-${crime.lsoaName}-${crime.lastOutcomeCategory}`,
 		locationNear: crime.location,
 		location: {
 			lat: parseFloat(crime.latitude as string),
 			lng: parseFloat(crime.longitude as string),
 		},
 	}));
-
-	console.log('locations', locations);
 
 	return c.json({ data: locations });
 });

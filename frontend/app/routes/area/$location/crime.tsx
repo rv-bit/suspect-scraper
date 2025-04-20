@@ -17,6 +17,7 @@ type LoaderAreaData = {
         crimeType: string
         count: number
     }[]
+    year: string
     total: number
     area: string
 }
@@ -58,9 +59,9 @@ export async function loader({ params, request }: Route.LoaderArgs) {
     if (!cachedData) {
         await prefetchArea(params.id, year);
     } else {
-        if (cachedData.area !== params.id) {
+        if (year !== cachedData.year) {
             await queryClient.invalidateQueries({
-                queryKey: ['crime-data']
+                queryKey: ['crime-data', params.id, year],
             });
     
             await prefetchArea(params.id, year);
@@ -72,11 +73,12 @@ export async function loader({ params, request }: Route.LoaderArgs) {
     return {
         data: cachedData.data || [],
         total: cachedData.total || 0,
+        year: year,
         area: params.id,
     }
 }
 
-export async function clientLoader({ serverLoader, params }: Route.ClientLoaderArgs) {
+export async function clientLoader({ serverLoader }: Route.ClientLoaderArgs) {
 	const serverData = await serverLoader();
 
 	return {
@@ -123,15 +125,8 @@ export default function Index() {
         });
     };
 
-    const handleChangeDate = (date: string) => {
-        setCurrentDate(date);
-        setSearchParams({ year: date });
-    }
-
-    const handleChangeDataCrime = React.useCallback( async (crime: string) => {
-        setCurrentCrimeSelected(crime);
-
-        const cachedData = queryClient.getQueryData([`locationsByCrime`, crime, sharedData.area, currentDate]) as Locations[];
+    const handleChangeData = React.useCallback((date: string, crime: string) => {
+        const cachedData = queryClient.getQueryData([`locationsByCrime`, crime, sharedData.area, date]) as Locations[];
 
         if (cachedData) {
             setLocations(cachedData);
@@ -140,29 +135,42 @@ export default function Index() {
 
         setLoading(true);
 
-        const result = await axiosInstance.get(`/api/v0/${sharedData.area}/getCrimeDataByCrime/${currentDate}/${crime}`);
-        const data = result.data.data;
+        const res = axiosInstance.get(`/api/v0/${sharedData.area}/getCrimeDataByCrime/${date}/${crime}`);
+        res.then((result) => {
+            const data = result.data.data;
 
-        queryClient.setQueryData(["latestCrimesChartData", crime, sharedData.area, currentDate], data);
+            queryClient.setQueryData(["latestCrimesChartData", crime, sharedData.area, date], data);
 
-        const chunks = chunkArray<Locations>(data, 100);
-        let finalArray: Locations[] = [];
+            const chunks = chunkArray<Locations>(data, 100);
+            let finalArray: Locations[] = [];
 
-        if (chunks.length >= 2) {
-            finalArray = chunks.flat();
-        } else {
-            finalArray = data.map((location: Locations) => ({
-                key: location.key,
-                location: {
-                    lat: location.location.lat,
-                    lng: location.location.lng
-                },
-                locationNear: location.locationNear
-            }));
-        }
+            if (chunks.length >= 2) {
+                finalArray = chunks.flat();
+            } else {
+                finalArray = data.map((location: Locations) => ({
+                    key: location.key,
+                    location: {
+                        lat: location.location.lat,
+                        lng: location.location.lng
+                    },
+                    locationNear: location.locationNear
+                }));
+            }
 
-        setLoading(false);
-        setLocations(finalArray);
+            setLoading(false);
+            setLocations(finalArray);
+        })
+    }, [sharedData.area]);
+
+    const handleChangeDate = React.useCallback( async (date: string) => {
+        setCurrentDate(date);
+        setSearchParams({ year: date });
+    }, [sharedData.area]);
+
+    const handleChangeDataCrime = React.useCallback( async (crime: string) => {
+        setCurrentCrimeSelected(crime);
+
+        handleChangeData(currentDate, crime);
     }, [sharedData.area, currentDate]);
 
     React.useEffect(() => {
@@ -178,6 +186,13 @@ export default function Index() {
         clusterer.current?.addMarkers(Object.values(markers));
     }, [locations, markers]);
 
+    React.useEffect(() => {
+        if (!map) return;
+        if (locations.length === 0) return;
+        
+        handleChangeData(currentDate, currentCrimeSelected);
+    }, [searchParams]);
+
     const safeLocations = React.useMemo(() => {
         return locations.flat?.() ?? locations;
     }, [locations]);
@@ -186,7 +201,7 @@ export default function Index() {
         <div className="flex justify-start items-start gap-2 w-full h-full max-w-[85rem]">
 
             {loading && (
-                <div className="z-99 absolute top-0 left-0 h-full w-full  bg-black/20">
+                <div className="z-99 absolute top-0 left-0 flex items-center justify-center h-full w-full  bg-black/20">
                     <svg className="text-gray-300 animate-spin" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"width="24" height="24">
                         <path
                             d="M32 3C35.8083 3 39.5794 3.75011 43.0978 5.20749C46.6163 6.66488 49.8132 8.80101 52.5061 11.4939C55.199 14.1868 57.3351 17.3837 58.7925 20.9022C60.2499 24.4206 61 28.1917 61 32C61 35.8083 60.2499 39.5794 58.7925 43.0978C57.3351 46.6163 55.199 49.8132 52.5061 52.5061C49.8132 55.199 46.6163 57.3351 43.0978 58.7925C39.5794 60.2499 35.8083 61 32 61C28.1917 61 24.4206 60.2499 20.9022 58.7925C17.3837 57.3351 14.1868 55.199 11.4939 52.5061C8.801 49.8132 6.66487 46.6163 5.20749 43.0978C3.7501 39.5794 3 35.8083 3 32C3 28.1917 3.75011 24.4206 5.2075 20.9022C6.66489 17.3837 8.80101 14.1868 11.4939 11.4939C14.1868 8.80099 17.3838 6.66487 20.9022 5.20749C24.4206 3.7501 28.1917 3 32 3L32 3Z"
