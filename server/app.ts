@@ -6,7 +6,9 @@ import { HTTPException } from 'hono/http-exception'
 
 import { type ErrorResponse } from '~/shared/types'
 
-import areaRouter from './routes/area'
+import areaRouter from '~/server/routes/area'
+
+import { trainModel } from '~/server/database/train'
 
 const app = new Hono().basePath('/api')
 
@@ -55,5 +57,7 @@ app.onError((err, c) => {
 
 app.get('*', serveStatic({ root: './frontend/dist' }))
 app.get('*', serveStatic({ path: './frontend/dist/index.html' }))
+
+// trainModel()
 
 export default app
