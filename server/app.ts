@@ -8,7 +8,8 @@ import { type ErrorResponse } from '~/shared/types'
 
 import areaRouter from '~/server/routes/area'
 
-import { trainModel } from '~/server/database/train'
+import { getAvailableCrimeTypes, predictCrimeCount, trainModel } from '~/server/database/train'
+import { pool } from './database'
 
 const app = new Hono().basePath('/api')
 
@@ -58,6 +59,23 @@ app.onError((err, c) => {
 app.get('*', serveStatic({ root: './frontend/dist' }))
 app.get('*', serveStatic({ path: './frontend/dist/index.html' }))
 
-// trainModel()
+async function main() {
+	try {
+		await trainModel();
+		
+		const prediction = await predictCrimeCount(
+			2025,  // year
+			5,     // month (January)
+			'burglary'    // example crime type
+		);
+		
+		// console.log(`Predicted crime count: ${prediction}`);
+	} catch (error) {
+		console.error('Error in main function:', error);
+	}
+}
+
+main();
 
 export default app
+
