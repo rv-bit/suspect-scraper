@@ -31,21 +31,6 @@ type Locations = {
     locationNear: string 
 }
 
-const prefetchArea = async (id: string, year: string) => {
-    await queryClient.prefetchQuery({
-        queryKey: [`crime-data`, id, year],
-        queryFn: async () => {
-            const result = await axiosInstance.get(`/api/v0/${id}/getCrimeDataByMonth/${year}`);
-            return {
-                data: result.data.data,
-                total: result.data.total,
-                area: id,
-            };
-        },
-        staleTime: 10 * 1000, // 30 seconds
-    });
-}
-
 export async function loader({ params, request }: Route.LoaderArgs) {
     if (!params.id) {
         throw new Response("", { status: 404, headers: { Location: "/" } }); // Redirect to home if no area is provided
@@ -54,21 +39,28 @@ export async function loader({ params, request }: Route.LoaderArgs) {
     const url = new URL(request.url);
     const year = url.searchParams.get('year') as string;
 
-    let cachedData = queryClient.getQueryData(['crime-data', params.id, year]) as LoaderAreaData;
+    const cachedData = await queryClient.ensureQueryData({
+        queryKey: [`crime-data`, params.id, year],
+        queryFn: async () => {
+            const result = await axiosInstance.get(`/api/v0/${params.id}/getCrimeDataByMonth/${year}`);
 
-    if (!cachedData) {
-        await prefetchArea(params.id, year);
-    } else {
-        if (year !== cachedData.year) {
-            await queryClient.invalidateQueries({
-                queryKey: ['crime-data', params.id, year],
-            });
-    
-            await prefetchArea(params.id, year);
-        }
+            if (result.status !== 200) {
+                throw new Error("Failed to fetch data");
+            }
+
+            return {
+                data: result.data.data,
+                total: result.data.total,
+                area: params.id,
+            } as LoaderAreaData;
+        },
+    })
+
+    if (cachedData.area !== params.id) {
+        await queryClient.invalidateQueries({
+            queryKey: [`crime-data`, params.id, year],
+        });
     }
-
-    cachedData = queryClient.getQueryData(['crime-data', params.id, year]) as LoaderAreaData;
 
     return {
         data: cachedData.data || [],

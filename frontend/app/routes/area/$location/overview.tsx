@@ -38,11 +38,15 @@ type LoaderAreaData = {
     area: string
 }
 
-const prefetchArea = async (id: string) => {
-    await queryClient.prefetchQuery({
-        queryKey: [`area-overview`],
+export async function loader({ params }: Route.LoaderArgs) {
+    if (!params.id) {
+        throw new Response("", { status: 404, headers: { Location: "/" } }); // Redirect to home if no area is provided
+    }
+
+    const cachedData = await queryClient.ensureQueryData({
+        queryKey: [`area-overview`, params.id],
         queryFn: async () => {
-            const result = await axiosInstance.get(`/api/v0/${id}`);
+            const result = await axiosInstance.get(`/api/v0/${params.id}`);
 
             if (result.status !== 200) {
                 throw new Error("Failed to fetch data");
@@ -52,33 +56,16 @@ const prefetchArea = async (id: string) => {
                 lastMonthTopCrimes: result.data.lastMonthTopCrimes,
                 topIncreaseFromPrev: result.data.topIncreaseFromPrevMonth,
                 lastYearTotalsByMonth: result.data.lastYearTotalsByMonth,
-                area: id,
-            };
+                area: params.id,
+            } as LoaderAreaData;
         },
-        staleTime: 10 * 1000, // 30 seconds
-    });
-}
+    })
 
-export async function loader({ params }: Route.LoaderArgs) {
-    if (!params.id) {
-        throw new Response("", { status: 404, headers: { Location: "/" } }); // Redirect to home if no area is provided
+    if (cachedData.area !== params.id) {
+        await queryClient.invalidateQueries({
+            queryKey: [`area-overview`, params.id],
+        });
     }
-
-    let cachedData = queryClient.getQueryData([`area-overview`]) as LoaderAreaData;
-
-    if (!cachedData) {
-        await prefetchArea(params.id);
-    } else {
-        if (cachedData.area !== params.id) {
-            await queryClient.invalidateQueries({
-                queryKey: [`area-overview`],
-            });
-    
-            await prefetchArea(params.id);
-        }
-    }
-
-    cachedData = queryClient.getQueryData([`area-overview`]) as LoaderAreaData;
 
     return {
         lastMonthTopCrimes: cachedData.lastMonthTopCrimes || [],
