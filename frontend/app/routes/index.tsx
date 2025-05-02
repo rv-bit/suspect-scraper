@@ -31,7 +31,7 @@ export default function Home() {
 	return (
 		<div className='flex items-start flex-col justify-start h-svh w-full mx-auto'>
 			<header className='flex justify-center items-center w-full border-border border-2 py-5 bg-gray-100'>
-				<h1 className='font-bricolage text-xl tracking-tighter text-center'>Welcome to <span className='text-amber-500 text-4xl text-center tracking-[-0.10rem]'>Suspect Scraper</span></h1>
+				<h1 className='font-bricolage text-xl tracking-tighter text-center'>Welcome to <span className='text-amber-500 text-4xl text-center tracking-[-0.10rem]'>Suspect Watch</span></h1>
 			</header>
 
 			<main className='flex justify-center items-center gap-2 mx-2 mt-5 pb-5 w-full'>
