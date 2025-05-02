@@ -16,11 +16,15 @@ type LoaderAreaData = {
     area: string
 }
 
-const prefetchArea = async (id: string) => {
-    await queryClient.prefetchQuery({
-        queryKey: [`area-shared-data`],
+export async function loader({ params }: Route.LoaderArgs) {
+    if (!params.id) {
+        throw new Response("", { status: 404, headers: { Location: "/" } }); // Redirect to home if no area is provided
+    }
+
+    const cachedData = await queryClient.ensureQueryData({
+        queryKey: [`area-shared-data`, params.id],
         queryFn: async () => {
-            const result = await axiosInstance.get(`/api/v0/${id}/shared`);
+            const result = await axiosInstance.get(`/api/v0/${params.id}/shared`);
 
             if (result.status !== 200) {
                 throw new Error("Failed to fetch data");
@@ -28,33 +32,16 @@ const prefetchArea = async (id: string) => {
 
             return {
                 dates: result.data.dates,
-                area: id,
-            };
+                area: params.id,
+            } as LoaderAreaData;
         },
-        staleTime: 10 * 1000, // 30 seconds
-    });
-}
+    })
 
-export async function loader({ params }: Route.LoaderArgs) {
-    if (!params.id) {
-        throw new Response("", { status: 404, headers: { Location: "/" } }); // Redirect to home if no area is provided
+    if (cachedData.area !== params.id) {
+        await queryClient.invalidateQueries({
+            queryKey: [`area-shared-data`, params.id],
+        });
     }
-
-    let cachedData = queryClient.getQueryData([`area-shared-data`]) as LoaderAreaData;
-
-    if (!cachedData) {
-        await prefetchArea(params.id);
-    } else {
-        if (cachedData.area !== params.id) {
-            await queryClient.invalidateQueries({
-                queryKey: [`area-shared-data`],
-            });
-    
-            await prefetchArea(params.id);
-        }
-    }
-
-    cachedData = queryClient.getQueryData([`area-shared-data`]) as LoaderAreaData;
 
     return {
         dates: cachedData.dates || [],
@@ -104,6 +91,7 @@ export default function Layout() {
             title: "Statistics",
             tab: "statistics",
             icon: ChartNoAxesCombined,
+            disabled: true,
         },
         {
             title: "Predictions",
@@ -166,7 +154,7 @@ export default function Layout() {
                                     navigate(`/area/${params.id}/${action.tab}${action.params ? `?year=${action.params}` : ""}`);
                                 }}
                                 className={cn(
-                                    "group relative h-auto w-auto min-w-40 shrink-0 items-center justify-center rounded-none p-9 pt-7 pb-3 hover:no-underline flex flex-col gap-0 [&_svg:not([class*='size-'])]:size-5 hover:bg-gray-100 transition-all duration-75 ease-in-out",
+                                    "group relative h-auto w-auto min-w-40 shrink-0 items-center justify-center rounded-none p-9 pt-7 pb-3 hover:no-underline flex flex-col gap-0 [&_svg:not([class*='size-'])]:size-5 hover:bg-gray-100 transition-all duration-75 ease-in-out disabled:pointer-events-auto disabled:cursor-not-allowed",
                                     isActive(`/area/${params.id}/${action.tab}`) || isActive(`/area/${params.id}/${action.tab}/`) ? "border-b-3 border-black" : "hover:border-b-3 hover:border-black/50",
                                 )}
                             >
