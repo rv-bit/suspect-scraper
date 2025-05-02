@@ -4,6 +4,5 @@
 	"tailwindFunctions": ["clsx", "cva"],
 	"tabWidth": 4,
 	"useTabs": true,
-	"printWidth": 200,
-    "proseWrap": "preserve"
+	"printWidth": 200
 }

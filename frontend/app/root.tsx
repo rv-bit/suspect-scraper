@@ -5,13 +5,10 @@ import type { Route } from './+types/root'
 import { isRouteErrorResponse, Links, Meta, Outlet, Scripts, ScrollRestoration, useLoaderData, useNavigation, type LoaderFunctionArgs } from 'react-router'
 import React from 'react'
 
-import { QueryClientProvider } from '@tanstack/react-query'
-
 import type { LoadingBarRef } from 'react-top-loading-bar'
 import LoadingBar from 'react-top-loading-bar'
 
-import queryClient from '~/lib/query-instance'
-import { APIProvider } from '@vis.gl/react-google-maps'
+import Providers from './providers'
 
 export const links: Route.LinksFunction = () => [
 	{ rel: 'preconnect', href: 'https://fonts.googleapis.com' },
@@ -32,6 +29,25 @@ export const links: Route.LinksFunction = () => [
 ]
 
 export function Layout({ children }: { children: React.ReactNode }) {
+	return (
+		<html lang='en'>
+			<head>
+				<meta charSet='utf-8' />
+				<meta name='viewport' content='width=device-width, initial-scale=1' />
+
+				<Meta />
+				<Links />
+			</head>
+			<body className='overflow-x-hidden'>
+				{children}
+				<ScrollRestoration />
+				<Scripts />
+			</body>
+		</html>
+	)
+}
+
+export default function App() {
 	const navigation = useNavigation()
 	const loadingBarRef = React.useRef<LoadingBarRef>(null)
 
@@ -46,31 +62,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
 	}, [navigation.state])
 
 	return (
-		<html lang='en'>
-			<head>
-				<meta charSet='utf-8' />
-				<meta name='viewport' content='width=device-width, initial-scale=1' />
-
-				<Meta />
-				<Links />
-			</head>
-			<body className='overflow-x-hidden'>
-				<LoadingBar ref={loadingBarRef} color='#5060dd' shadow={false} transitionTime={100} waitingTime={300} />
-
-					<QueryClientProvider client={queryClient}>
-						<APIProvider apiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY}>
-							{children}
-						</APIProvider>
-					</QueryClientProvider>
-				<ScrollRestoration />
-				<Scripts />
-			</body>
-		</html>
+		<>
+			<LoadingBar ref={loadingBarRef} color='#5060dd' shadow={false} transitionTime={100} waitingTime={300} />
+			<Providers>
+				<Outlet />
+			</Providers>
+		</>
 	)
-}
-
-export default function App() {
-	return <Outlet />
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
