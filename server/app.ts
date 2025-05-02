@@ -59,23 +59,23 @@ app.onError((err, c) => {
 app.get('*', serveStatic({ root: './frontend/dist' }))
 app.get('*', serveStatic({ path: './frontend/dist/index.html' }))
 
-async function main() {
-	try {
-		await trainModel();
+// async function main() {
+// 	try {
+// 		await trainModel();
 		
-		const prediction = await predictCrimeCount(
-			2025,  // year
-			5,     // month (January)
-			'burglary'    // example crime type
-		);
+// 		const prediction = await predictCrimeCount(
+// 			2025,  // year
+// 			5,     // month (January)
+// 			'burglary'    // example crime type
+// 		);
 		
-		// console.log(`Predicted crime count: ${prediction}`);
-	} catch (error) {
-		console.error('Error in main function:', error);
-	}
-}
+// 		// console.log(`Predicted crime count: ${prediction}`);
+// 	} catch (error) {
+// 		console.error('Error in main function:', error);
+// 	}
+// }
 
-main();
+// main();
 
 export default app
 
